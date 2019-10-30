@@ -5,7 +5,7 @@ services:
     command: gunicorn -b 0.0.0.0:5014 metrics:app --reload
     
     environment:
-      - FLASK_APP=req_t.py
+      - FLASK_APP=metrics.py
       - FLASK_DEBUG=1
       - PYTHONUNBUFFERED=True
     ports:

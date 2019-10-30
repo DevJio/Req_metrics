@@ -9,21 +9,13 @@ import pandas as pd
 from werkzeug.utils import secure_filename
 import os
 import re
+import metric_utils as utl
 
 app = Flask(__name__)
 CORS(app)
 
-
-
-model = joblib.load('modelPR_271019.pkl')
-count_vect = joblib.load('c_vectPR_271019.pkl')
-
-
-with open('cl_reportPR_271019.txt', 'r') as file:
-    cl_report=file.read()
-
-with open('conf_matrix_Model_to_service_271019.txt', 'r') as file:
-    conf_matrix =file.read()
+conf_matrix = 'any matrix'
+cl_report = 'any report'
 
 @app.route('/confusion_matrix')
 def confusion_matrix():
@@ -37,36 +29,32 @@ def classification_report():
 @app.route('/')
 def hello_world():
     print("go! go! go!")
-    return "<h1>test post service by json on ds_post {id:[ids], text: [texts]</h1>" 
+    return "<h1>test post service by json on /metrics {id:[ids], machineCategory': ['0', '1'], finalCategory: ['0', '2, 3']</h1>" 
 
 @app.route('/badrequest400')
 def bad_request():
     return abort(400)
 
 
-@app.route('/ds_post', methods=['POST'])
-def add_message():
-    try:
-        content = request.get_json()
-        data = pd.DataFrame(content)
+@app.route('/metrics', methods=['POST'])
+def metrics_calc():
+    #try:
+    content = request.get_json()
+    data = pd.DataFrame(content)
+    data.columns = ['id', 'predict', 'type_id']
+    predict = data.predict
+    expert = utl.prepateExpertCol(data.type_id)
 
-        data['text'] = data['text'].apply(normalize_text)
-        X = count_vect.transform(data['text'])
-        
-        data['class'] = model.predict(X)
-        data['probability'] = np.around(np.max(model.predict_proba(X), axis=1), decimals=3)
-        
-        response = app.response_class(response='{"id":'+data.id.to_json(orient='records')+ ',"class":' + str(list(data['class'].values))+ \
-            ',"probability":'+ str(list(data['probability'].values))+'}', 
+    conf_matrix = utl.make_conf_matrix(expert, predict)
+    cl_report = utl.make_cl_report(expert, predict)
+
+    response = app.response_class(response='{"confusion_matrix":'+conf_matrix.to_json()+ ',"metrics":' + cl_report.to_json()+'}', 
         status=200, 
         mimetype='application/json')
-        
-    
-    except:
-        return redirect(url_for('bad_request'))
     return response
-
-
+    #except:
+    #    return redirect(url_for('bad_request'))
+    
 
 
 app.config.update(dict(
