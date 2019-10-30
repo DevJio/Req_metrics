@@ -76,15 +76,19 @@ def prepateExpertCol(dFrameExpertCol):
     print(rez)
     return rez
 
-def make_conf_matrix(expert, predict):
-    conf_matrix = confusion_matrix(expert, predict, labels=labels )
+def make_conf_matrix(expert, predict, labels=[]):
+    if len(labels)==0:
+        labels = list(set(predict).union(set(expert)))
+    conf_matrix = confusion_matrix(expert, predict, )
     c_matr = pd.DataFrame(conf_matrix, columns=labels, index = labels)
     c_matr
     return c_matr
 
 
-def make_cl_report(expert, predict):
-    report = skm.classification_report(expert, predict, labels=labels, target_names=labels, output_dict=True)
+def make_cl_report(expert, predict, labels=[]):
+    if len(labels)==0:
+        labels = list(set(predict).union(set(expert)))
+    report = skm.classification_report(expert, predict, labels=labels, output_dict=True)
     rep = pd.DataFrame(report)
     rep = rep.T[['precision', 'recall', 'f1-score', 'support']]
     return rep
